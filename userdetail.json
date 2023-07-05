@@ -1,8 +1,12 @@
 {
-    "email":"arkaradet@gmail.com",
-    "pwd":"Arkaradet6131!",
-    "concert":"KCON 2023 THAILAND",
-    "zone":"V1",
-    "show":"1",
-    "seats":"4"
+  "email": "kxbk100@foxmail.com",
+  "pwd": "FTX0123++++",
+  "concert_url": "https://www.thaiticketmajor.com/concert/p1harmony-live-tour-p1ustage-hp1oneer-bangkok.html",
+  "name": [
+    "Feng",
+    "Tian",
+    "test"
+  ],
+  "zone": "A",
+  "seats": "2"
 }
