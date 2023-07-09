@@ -5,7 +5,6 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import json
 from time import sleep
-import sys
 import os
 from datetime import datetime
 
@@ -23,7 +22,7 @@ chrome_option.add_experimental_option("excludeSwitches", ['enable-automation']) 
 # get直接返回，不再等待界面加载完成
 desired_capabilities = DesiredCapabilities.CHROME
 desired_capabilities["pageLoadStrategy"] = "none"
-driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_option,
+driver = webdriver.Chrome(options=chrome_option,
                           desired_capabilities=desired_capabilities)
 wait = WebDriverWait(driver, 3)
 driver.maximize_window()
@@ -36,7 +35,6 @@ password = user["pwd"]
 zone = user["zone"]
 name = user["name"]
 concert_url = user["concert_url"]
-seat = int(user["seats"])
 zone_list = 0
 next_zone_index = 1
 
@@ -71,12 +69,18 @@ def select_show():
     print('[START] select_show')
     try:
         cur_url = driver.current_url
+        if findUrl("verify_condition", cur_url) or findUrl("zones", cur_url):
+            return
         if cur_url != concert_url:
             driver.get(concert_url)
         element = driver.find_element(
             By.XPATH,
             ' // *[ @ id = "section-event-round"] / div / div[1] / div[3] / div[2] / div / div[2] / span / a')
-        href = element.get_attribute('href')
+        # TODO JUST FOR TEST
+        # element = driver.find_element(
+        #     By.XPATH,
+        #     '  // *[ @ id = "section-event-round"] / div / div[2] / div[3] / div[2] / div / div[2] / span / a')
+        # href = element.get_attribute('href')
 
         while href == 'javascript:;':
             driver.refresh()
@@ -115,21 +119,46 @@ def findUrl(msg, link):
 def select_zone(zone=zone):
     print('[START] select_zone')
     try:
+        # count_zone = 0
+        # index = 0
+        # while count_zone == 0:
+        #     count_zone = driver.execute_script(
+        #         "return document.getElementsByTagName('area').length")
+        # for i in range(1, count_zone + 1):
+        #     seat = driver.find_element(
+        #         By.XPATH, f'//map/area[{i}]').get_attribute("href")
+        #     result = finZone(zone, seat)
+        #     if result:
+        #         index = i
+        #         break
+        # element = driver.find_element(
+        #     By.XPATH, f'//map/area[{index}]')
+        # myClick(element)
+        get_zone_button = driver.find_element(
+            By.ID, "popup-avail")
+        get_zone_button.click()
         count_zone = 0
         index = 0
         while count_zone == 0:
             count_zone = driver.execute_script(
-                "return document.getElementsByTagName('area').length")
+                "return document.getElementsByTagName('tr').length")
         for i in range(1, count_zone + 1):
-            seat = driver.find_element(
-                By.XPATH, f'//map/area[{i}]').get_attribute("href")
-            result = finZone(zone, seat)
-            if result:
+            seat_type = driver.find_element(
+                By.XPATH, f'//tbody/tr[{i}]/td[1]').get_attribute("textContent")
+            seat_number = driver.find_element(
+                By.XPATH, f'//tbody/tr[{i}]/td[2]/a').get_attribute("textContent")
+            if (seat_number == 'Available' or int(seat_number) > 0) and seat_type in zone:
                 index = i
                 break
-        element = driver.find_element(
-            By.XPATH, f'//map/area[{index}]')
-        myClick(element)
+        if index == 0:
+            driver.find_element(
+                By.XPATH, f'//*[@class="fancybox-close"]').click()
+            select_zone()
+        else:
+            element = driver.find_element(
+                By.XPATH, f'//tbody/tr[{index}]')
+            myClick(element)
+
     except Exception as e:
         print('[FAIL] select_zone', e)
         select_zone()
@@ -146,24 +175,57 @@ def finZone(msg, link):
 def select_seat(number=len(name)):
     print('[START] select_seat')
     try:
-        driver.find_element(
-            By.ID, 'book_cnt').click()
-        driver.find_element(
-            By.XPATH, f' // *[@id="book_cnt"] / option[{number + 1}]').click()
-        result = driver.find_element(
-            By.XPATH, f' // *[ @ class = "result"] /span').get_attribute('textContent')
-        if result == 'Available':
-            driver.find_element(
-                By.XPATH, f' // *[@id="booknow"]').click()
-        else:
-            if number != 1:
-                select_seat(1)
-            else:
-                main()
+        if findUrl('fixed', driver.current_url):
+            driver.find_element(By.ID, 'tableseats')
+            count_loop = driver.execute_script(
+                "return document.getElementsByClassName('seatuncheck').length")
+            for i in range(1, count_loop + 1):
+                print(i)
+                driver.execute_script(
+                    f"document.getElementsByClassName('seatuncheck')[{i}].click()")
+                result = driver.execute_script(
+                    "return document.getElementsByClassName('seatchecked').length")
+                if result == number:
+                    break
 
+            res = driver.find_element(
+                By.XPATH, f' // *[ @ class = "result"] /span').get_attribute('textContent')
+            if res == 'Available':
+                driver.find_element(
+                    By.XPATH, f' // *[@id="booknow"]').click()
+            else:
+                go_to_next_zone()
+        else:
+            driver.find_element(
+                By.ID, 'book_cnt').click()
+            driver.find_element(
+                By.XPATH, f' // *[@id="book_cnt"] / option[{number + 1}]').click()
+            res = driver.find_element(
+                By.XPATH, f' // *[ @ class = "result"] /span').get_attribute('textContent')
+            if res == 'Available':
+                driver.find_element(
+                    By.XPATH, f' // *[@id="booknow"]').click()
+            else:
+                go_to_next_zone()
     except Exception as e:
         print('[FAIL] select_seat', e)
         select_seat()
+
+
+def go_to_next_zone():
+    print('[START] go_to_next_zone')
+    try:
+        back = driver.find_element(By.XPATH, f'//*[@class="btn-action"]')
+        myClick(back)
+        is_back = False
+        while not is_back:
+            is_back = findUrl("zones", driver.current_url)
+        if is_back:
+            select_zone()
+            select_seat()
+    except Exception as e:
+        print('[FAIL] go_to_next_zone', e)
+        go_to_next_zone()
 
 
 def fill_name():
@@ -190,8 +252,13 @@ def confirm():
         btn_pickup = driver.find_element(By.ID, "btn_pickup")
         myClick(btn_pickup)
 
-        btn_creditcard = driver.find_element(By.ID, "btn_creditcard")
-        myClick(btn_creditcard)
+        alipay = driver.find_elements(By.ID, "btn_alipay")
+
+        if len(alipay):
+            myClick(alipay[0])
+        else:
+            btn_creditcard = driver.find_element(By.ID, "btn_creditcard")
+            myClick(btn_creditcard)
 
         checkagree = driver.find_element(By.ID, "checkagree")
         myClick(checkagree)
@@ -201,28 +268,6 @@ def confirm():
     except Exception as e:
         print('[FAIL] confirm', e)
         confirm()
-
-
-def go_to_next_zone():
-    global next_zone_index
-    while next_zone_index <= zone_list:
-        driver.find_element_by_partial_link_text("ย้อนกลับ / Back").click()
-        driver.implicitly_wait(40)
-        driver.find_element_by_partial_link_text(
-            "ที่นั่งว่าง / Seats Available").click()
-        driver.implicitly_wait(30)
-        for j in range(2, zone_list + 1):
-            amount = driver.find_element_by_xpath(
-                f"//*[@class='container-popup']/table[1]/tbody[1]/tr[{j}]/td[2]").text
-            i = driver.find_element_by_xpath(
-                f"//*[@class='container-popup']/table[1]/tbody[1]/tr[{j}]/td[1]").text
-            if amount != "0" or amount == "Available":
-                select_seat(i)
-                select_seat()
-            next_zone_index += 1
-    if count == 0:
-        print(f"Sorry, this concert don't have any seat for you.")
-        sys.exit()
 
 
 def confirm_ticketprotect():
@@ -252,12 +297,10 @@ def main():
     try:
         select_show()
         verify()
-        select_zone(zone)
+        select_zone()
         select_seat()
         fill_name()
         confirm()
-        # if count == 0:
-        #     go_to_next_zone()
     except Exception as e:
         print('[FAIL] main', e)
 
@@ -265,5 +308,6 @@ def main():
 if __name__ == '__main__':
     setup()
     login()
+    # TODO
     # sleep_until_run_time(datetime.strptime('2023-07-06 00:35:00', '%Y-%m-%d %H:%M:%S'))
     main()

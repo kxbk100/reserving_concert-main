@@ -1,12 +1,15 @@
 {
   "email": "kxbk100@foxmail.com",
   "pwd": "FTX0123++++",
-  "concert_url": "https://www.thaiticketmajor.com/concert/p1harmony-live-tour-p1ustage-hp1oneer-bangkok.html",
+  "concert_url": "https://www.thaiticketmajor.com/concert/2023-ikon-world-tour-take-off-in-bangkok.html",
   "name": [
     "Feng",
     "Tian",
     "test"
   ],
-  "zone": "A",
-  "seats": "2"
+  "zone": [
+    "B2",
+    "C2",
+    "D2"
+  ]
 }
