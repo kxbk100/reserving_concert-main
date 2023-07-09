@@ -22,7 +22,7 @@ chrome_option.add_experimental_option("excludeSwitches", ['enable-automation']) 
 # get直接返回，不再等待界面加载完成
 desired_capabilities = DesiredCapabilities.CHROME
 desired_capabilities["pageLoadStrategy"] = "none"
-driver = webdriver.Chrome(options=chrome_option,
+driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_option,
                           desired_capabilities=desired_capabilities)
 wait = WebDriverWait(driver, 3)
 driver.maximize_window()
@@ -59,7 +59,9 @@ def login():
         pwd = driver.find_element(By.NAME, "password")
         pwd.send_keys(password)
         driver.find_element(By.XPATH, '//*[@class="btn-red btn-signin"]').click()
-        sleep(2)
+        sleep(15)
+        driver.refresh()
+        sleep(15)
     except Exception as e:
         print('[FAIL] login', e)
         login()
@@ -79,10 +81,11 @@ def select_show():
         # TODO JUST FOR TEST
         # element = driver.find_element(
         #     By.XPATH,
-        #     '  // *[ @ id = "section-event-round"] / div / div[2] / div[3] / div[2] / div / div[2] / span / a')
-        # href = element.get_attribute('href')
+        #     '//*[ @ id = "section-event-round"] / div / div[2] / div[3] / div[2] / div / div[2] / span / a')
 
+        href = element.get_attribute('href')
         while href == 'javascript:;':
+            sleep(1)
             driver.refresh()
             select_show()
         myClick(element)
@@ -99,8 +102,10 @@ def verify():
         if result:
             element = driver.find_element(By.ID, "rdagree")
             myClick(element)
-            driver.find_element(
-                By.ID, 'btn_verify').click()
+            sleep(0.5)
+            verify_btn = driver.find_element(
+                By.ID, 'btn_verify')
+            myClick(verify_btn)
     except Exception as e:
         print('[FAIL] verify', e)
         if result:
@@ -136,7 +141,10 @@ def select_zone(zone=zone):
         # myClick(element)
         get_zone_button = driver.find_element(
             By.ID, "popup-avail")
-        get_zone_button.click()
+        myClick(get_zone_button)
+
+        driver.find_element(By.ID, "avail_data")
+
         count_zone = 0
         index = 0
         while count_zone == 0:
@@ -179,6 +187,10 @@ def select_seat(number=len(name)):
             driver.find_element(By.ID, 'tableseats')
             count_loop = driver.execute_script(
                 "return document.getElementsByClassName('seatuncheck').length")
+
+            if count_loop < number:
+                go_to_next_zone()
+
             for i in range(1, count_loop + 1):
                 print(i)
                 driver.execute_script(
@@ -191,8 +203,9 @@ def select_seat(number=len(name)):
             res = driver.find_element(
                 By.XPATH, f' // *[ @ class = "result"] /span').get_attribute('textContent')
             if res == 'Available':
-                driver.find_element(
-                    By.XPATH, f' // *[@id="booknow"]').click()
+                booknow = driver.find_element(
+                    By.XPATH, f' // *[@id="booknow"]')
+                myClick(booknow)
             else:
                 go_to_next_zone()
         else:
@@ -203,8 +216,9 @@ def select_seat(number=len(name)):
             res = driver.find_element(
                 By.XPATH, f' // *[ @ class = "result"] /span').get_attribute('textContent')
             if res == 'Available':
-                driver.find_element(
-                    By.XPATH, f' // *[@id="booknow"]').click()
+                booknow = driver.find_element(
+                    By.XPATH, f' // *[@id="booknow"]')
+                myClick(booknow)
             else:
                 go_to_next_zone()
     except Exception as e:
@@ -237,7 +251,8 @@ def fill_name():
             for i in range(0, len(name)):
                 fill = fills[i]
                 fill.send_keys(name[i])
-            driver.find_element(By.ID, 'btn_regnow').click()
+            regnow = driver.find_element(By.ID, 'btn_regnow')
+            myClick(regnow)
         except Exception as e:
             print('[FAIL] fill_name', e)
             fill_name()
