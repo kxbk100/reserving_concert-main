@@ -194,7 +194,7 @@ def select_seat(number=len(name)):
             for i in range(1, count_loop + 1):
                 print(i)
                 driver.execute_script(
-                    f"document.getElementsByClassName('seatuncheck')[{i}].click()")
+                    f"document.getElementsByClassName('seatuncheck')[{i - 1}].click()")
                 result = driver.execute_script(
                     "return document.getElementsByClassName('seatchecked').length")
                 if result == number:
