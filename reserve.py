@@ -106,6 +106,7 @@ def verify():
             verify_btn = driver.find_element(
                 By.ID, 'btn_verify')
             myClick(verify_btn)
+            sleep(0.1)
     except Exception as e:
         print('[FAIL] verify', e)
         if result:
@@ -195,6 +196,7 @@ def select_seat(number=len(name)):
                 print(i)
                 driver.execute_script(
                     f"document.getElementsByClassName('seatuncheck')[{i - 1}].click()")
+                sleep(0.1)
                 result = driver.execute_script(
                     "return document.getElementsByClassName('seatchecked').length")
                 if result == number:
@@ -324,5 +326,7 @@ if __name__ == '__main__':
     setup()
     login()
     # TODO
-    # sleep_until_run_time(datetime.strptime('2023-07-06 00:35:00', '%Y-%m-%d %H:%M:%S'))
+    print('等待程序启动中')
+    sleep_until_run_time(datetime.strptime('2023-07-15 10:59:30', '%Y-%m-%d %H:%M:%S'))
+    print('程序启动')
     main()
