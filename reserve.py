@@ -59,9 +59,9 @@ def login():
         pwd = driver.find_element(By.NAME, "password")
         pwd.send_keys(password)
         driver.find_element(By.XPATH, '//*[@class="btn-red btn-signin"]').click()
-        sleep(15)
+        sleep(10)
         driver.refresh()
-        sleep(15)
+        sleep(10)
     except Exception as e:
         print('[FAIL] login', e)
         login()
@@ -69,15 +69,16 @@ def login():
 
 def select_show():
     print('[START] select_show')
+    deal_fault('')
     try:
         cur_url = driver.current_url
-        if findUrl("verify_condition", cur_url) or findUrl("zones", cur_url):
-            return
+        # if findUrl("verify_condition", cur_url) or findUrl("zones", cur_url):
+        #     return
         if cur_url != concert_url:
             driver.get(concert_url)
         element = driver.find_element(
             By.XPATH,
-            ' // *[ @ id = "section-event-round"] / div / div[1] / div[3] / div[2] / div / div[2] / span / a')
+            '//*[@id="section-event-round"]/div/div[1]/div[3]/div[2]/div/div[2]/div[2]/span/a')
         # TODO JUST FOR TEST
         # element = driver.find_element(
         #     By.XPATH,
@@ -96,6 +97,7 @@ def select_show():
 
 def verify():
     print('[START] verify')
+    deal_fault('verify_condition')
     try:
         result = findUrl("verify_condition", driver.current_url)
         zones = findUrl("zones", driver.current_url)
@@ -124,6 +126,7 @@ def findUrl(msg, link):
 
 def select_zone(zone=zone):
     print('[START] select_zone')
+    deal_fault('zones')
     try:
         # count_zone = 0
         # index = 0
@@ -183,6 +186,7 @@ def finZone(msg, link):
 
 def select_seat(number=len(name)):
     print('[START] select_seat')
+    deal_fault('fixed')
     try:
         if findUrl('fixed', driver.current_url):
             driver.find_element(By.ID, 'tableseats')
@@ -193,10 +197,14 @@ def select_seat(number=len(name)):
                 go_to_next_zone()
 
             for i in range(1, count_loop + 1):
+                result = driver.execute_script(
+                    "return document.getElementsByClassName('seatchecked').length")
+                if result == number:
+                    break
                 print(i)
                 driver.execute_script(
                     f"document.getElementsByClassName('seatuncheck')[{i - 1}].click()")
-                sleep(0.1)
+                sleep(0.6)
                 result = driver.execute_script(
                     "return document.getElementsByClassName('seatchecked').length")
                 if result == number:
@@ -230,6 +238,8 @@ def select_seat(number=len(name)):
 
 def go_to_next_zone():
     print('[START] go_to_next_zone')
+    if findUrl("zones", driver.current_url):
+        select_zone()
     try:
         back = driver.find_element(By.XPATH, f'//*[@class="btn-action"]')
         myClick(back)
@@ -246,6 +256,7 @@ def go_to_next_zone():
 
 def fill_name():
     print('[START] fill_name')
+    deal_fault('enroll_fest')
     if findUrl('enroll_fest', driver.current_url):
         try:
             fills = driver.find_elements(
@@ -262,6 +273,7 @@ def fill_name():
 
 def confirm():
     print('[START] confirm')
+    deal_fault('paymentall')
     try:
         check_protect = driver.find_element(By.ID, "check-protect")
         myClick(check_protect)
@@ -284,6 +296,19 @@ def confirm():
         myClick(btn_confirm)
     except Exception as e:
         print('[FAIL] confirm', e)
+        confirm()
+
+
+def deal_fault(cur_step):
+    if findUrl("verify_condition", driver.current_url) and cur_step != "verify_condition":
+        verify()
+    if findUrl("zones", driver.current_url) and cur_step != "zones":
+        select_zone()
+    if findUrl('fixed', driver.current_url) and cur_step != "fixed":
+        select_seat()
+    if findUrl('enroll_fest', driver.current_url) and cur_step != "enroll_fest":
+        fill_name()
+    if findUrl('paymentall', driver.current_url) and cur_step != "paymentall":
         confirm()
 
 
@@ -327,6 +352,6 @@ if __name__ == '__main__':
     login()
     # TODO
     print('等待程序启动中')
-    sleep_until_run_time(datetime.strptime('2023-07-15 10:59:30', '%Y-%m-%d %H:%M:%S'))
+    # sleep_until_run_time(datetime.strptime('2023-07-15 13:59:30', '%Y-%m-%d %H:%M:%S'))
     print('程序启动')
     main()
